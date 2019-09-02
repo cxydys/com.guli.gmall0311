@@ -115,8 +115,17 @@ public interface ManageService {
 
     /**
      * 查询销售属性值拼接成一个spuId
+     *
      * @param spuId
      * @return
      */
     List<SkuSaleAttrValue> getSkuSaleAttrValueListBySpu(String spuId);
+
+    /**
+     * 根据平台属性值id查询平台属性和平台属性值
+     *
+     * @param attrValueIdList
+     * @return
+     */
+    List<BaseAttrInfo> getAttrList(List<String> attrValueIdList);
 }

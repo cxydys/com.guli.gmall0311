@@ -294,10 +294,10 @@ public class ManageServiceImpl implements ManageService {
                 //走数据库
                 System.out.println("走的是数据库");
                 //定义锁  sku:skuId:lock
-                String skuLockKey = ManageConst.SKUKEY_PREFIX + skuId + ManageConst.SKULOCK_SUFFIX;
+                String skuLockKey = ManageConst.SKUKEY_PREFIX + skuId + "1" + ManageConst.SKULOCK_SUFFIX;
                 //执行命令,给这把锁设置过期时间
-                String lockKey = jedis.set(skuLockKey, "ATGUIGU", "NX", "PX", ManageConst.SKUKEY_TIMEOUT);
-                if ("ok".equals(lockKey)) {
+                String lockKey = jedis.set(skuLockKey, "ATGUIGU", "NX", "PX", ManageConst.SKULOCK_EXPIRE_PX);
+                if ("OK".equals(lockKey)) {
                     System.out.println("获取分布式锁");
                     //走数据库
                     skuInfo = getSkuInfoDB(skuId);
@@ -322,22 +322,27 @@ public class ManageServiceImpl implements ManageService {
 
         } catch (Exception e) {
             e.printStackTrace();
+            // 从db走！
+            return getSkuInfoDB(skuId);
         } finally {
             if (jedis != null) {
                 jedis.close();
             }
         }
-        // 从db走！
-        return getSkuInfoDB(skuId);
+
     }
 
-    // ctrl+alt+m
     private SkuInfo getSkuInfoDB(String skuId) {
         // select * from skuInfo where id = skuId;
         // 通过skuId 将skuImageList 查询出来直接放入skuInfo 对象中！
         SkuInfo skuInfo;
         skuInfo = skuInfoMapper.selectByPrimaryKey(skuId);
         skuInfo.setSkuImageList(getSkuImageBySkuId(skuId));
+        //通过skuId获取skuAttrValue
+        SkuAttrValue skuAttrValue = new SkuAttrValue();
+        skuAttrValue.setSkuId(skuId);
+        List<SkuAttrValue> skuAttrValueList = skuAttrValueMapper.select(skuAttrValue);
+        skuInfo.setSkuAttrValueList(skuAttrValueList);
         return skuInfo;
     }
 
@@ -373,6 +378,18 @@ public class ManageServiceImpl implements ManageService {
     @Override
     public List<SkuSaleAttrValue> getSkuSaleAttrValueListBySpu(String spuId) {
         return skuSaleAttrValueMapper.selectSkuSaleAttrValueListBySpu(spuId);
+    }
+
+    /**
+     * 根据平台属性值id查询平台属性和平台属性值
+     *
+     * @param attrValueIdList
+     * @return
+     */
+    @Override
+    public List<BaseAttrInfo> getAttrList(List<String> attrValueIdList) {
+        String valueIds = org.apache.commons.lang3.StringUtils.join(attrValueIdList.toArray(), ",");
+        return baseAttrInfoMapper.selectAttrInfoListByIds(valueIds);
     }
 
 
